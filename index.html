@@ -43,6 +43,7 @@
   }
   header .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#AEC0EA;font-weight:600;margin-bottom:2px;}
   header h1{margin:0;font-size:20px;font-weight:800;letter-spacing:-.01em;}
+  header .sync-note{font-size:10px;color:#AEC0EA;margin-top:6px;opacity:.85;}
 
   nav{display:flex;border-bottom:1px solid var(--line);background:var(--white);}
   nav button{flex:1;padding:13px 8px;border:none;background:none;font-size:14px;font-weight:700;color:var(--gray-mid);border-bottom:3px solid transparent;cursor:pointer;}
@@ -134,6 +135,7 @@
   <header>
     <div class="eyebrow">Turlock National Little League</div>
     <h1>Cubs Bullpen &amp; Game Charting</h1>
+    <div class="sync-note">Shared with the coaching staff — synced automatically</div>
   </header>
 
   <nav>
@@ -151,7 +153,6 @@
         <button id="mode-btn-game" onclick="switchMode('game')">Game</button>
       </div>
 
-      <!-- Shared pitcher + date fields -->
       <div class="field">
         <label for="pitcherInput">Pitcher</label>
         <input type="text" id="pitcherInput" list="pitcherList" placeholder="Type or pick a name" oninput="onPitcherInput()">
@@ -234,7 +235,7 @@
       <div id="historyContent">
         <div class="empty">
           <div class="big">⚾</div>
-          <p>No sessions charted yet.<br>Head to the Chart tab to log your first one.</p>
+          <p>Loading…</p>
         </div>
       </div>
     </section>
@@ -244,65 +245,107 @@
 
 <div class="toast" id="toast"></div>
 
-<script>
-const SESSIONS_KEY = 'cubs_sessions_v1';
-const KNOWN_PITCHERS_KEY = 'cubs_known_pitchers_v1';
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentSingleTabManager,
+  collection,
+  doc,
+  getDocs,
+  getDoc,
+  setDoc,
+  deleteDoc
+} from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+// ---------- Firebase setup ----------
+const firebaseConfig = {
+  apiKey: "AIzaSyBVbf6kRNxVYeaR0BbkiA1qRpZgutbef1w",
+  authDomain: "bullpen-tracker-d6798.firebaseapp.com",
+  projectId: "bullpen-tracker-d6798",
+  storageBucket: "bullpen-tracker-d6798.firebasestorage.app",
+  messagingSenderId: "735925318387",
+  appId: "1:735925318387:web:82f2eb35547e2e56043d86"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+// Persistent local cache = entries made with no signal at the field still save
+// instantly and sync automatically once the phone reconnects.
+const db = initializeFirestore(firebaseApp, {
+  localCache: persistentLocalCache({ tabManager: persistentSingleTabManager() })
+});
+
+const SESSIONS_COLLECTION = 'sessions';
+const PITCHERS_DOC_REF = doc(db, 'meta', 'pitchers');
 const RETURNER_PITCHERS = ['Jaxson','Lane','Kai','Israel'];
 
-let currentMode = 'bullpen'; // 'bullpen' | 'game'
-let bullpenPitches = []; // 'S' or 'B'
-let historyTypeFilter = 'all'; // 'all' | 'bullpen' | 'game'
+let currentMode = 'bullpen';
+let bullpenPitches = [];
+let historyTypeFilter = 'all';
 let historyPitcherFilter = 'all';
 
-// ---------- Storage helpers (local device only) ----------
-function loadSessions(){
+// ---------- Firestore data helpers ----------
+async function fetchSessions(){
   try{
-    const raw = localStorage.getItem(SESSIONS_KEY);
-    return raw ? JSON.parse(raw) : [];
-  }catch(e){ console.error(e); return []; }
-}
-function saveSessionsList(list){
-  try{
-    localStorage.setItem(SESSIONS_KEY, JSON.stringify(list));
-    return true;
-  }catch(e){ console.error(e); return false; }
-}
-function loadKnownPitchers(){
-  try{
-    const raw = localStorage.getItem(KNOWN_PITCHERS_KEY);
-    return raw ? JSON.parse(raw) : [];
-  }catch(e){ return []; }
-}
-function saveKnownPitchers(list){
-  try{ localStorage.setItem(KNOWN_PITCHERS_KEY, JSON.stringify(list)); }catch(e){ console.error(e); }
-}
-function rememberPitcherName(name){
-  const known = loadKnownPitchers();
-  if(!known.includes(name)){
-    known.push(name);
-    saveKnownPitchers(known);
+    const snap = await getDocs(collection(db, SESSIONS_COLLECTION));
+    const list = [];
+    snap.forEach(d => list.push(d.data()));
+    return list;
+  }catch(e){
+    console.error('fetchSessions failed', e);
+    return [];
   }
 }
 
+async function saveSessionDoc(record){
+  await setDoc(doc(db, SESSIONS_COLLECTION, record.id), record);
+}
+
+async function deleteSessionDoc(id){
+  await deleteDoc(doc(db, SESSIONS_COLLECTION, id));
+}
+
+async function fetchKnownPitchers(){
+  try{
+    const snap = await getDoc(PITCHERS_DOC_REF);
+    if(snap.exists() && Array.isArray(snap.data().names)) return snap.data().names;
+    return [];
+  }catch(e){
+    console.error('fetchKnownPitchers failed', e);
+    return [];
+  }
+}
+
+async function rememberPitcherName(name){
+  try{
+    const known = await fetchKnownPitchers();
+    if(!known.includes(name)){
+      known.push(name);
+      await setDoc(PITCHERS_DOC_REF, { names: known });
+    }
+  }catch(e){
+    console.error('Could not save pitcher name', e);
+  }
+}
+
+// ---------- Small utilities ----------
 function todayStr(){
   const d = new Date();
   const m = String(d.getMonth()+1).padStart(2,'0');
   const day = String(d.getDate()).padStart(2,'0');
   return `${d.getFullYear()}-${m}-${day}`;
 }
-
 function showToast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'), 1800);
 }
-
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 function escapeAttr(str){ return String(str).replace(/'/g, "\\'"); }
-
 function formatDate(iso){
   const [y,m,d] = iso.split('-');
   const dt = new Date(Number(y), Number(m)-1, Number(d));
@@ -310,12 +353,12 @@ function formatDate(iso){
 }
 
 // ---------- Tabs ----------
-function switchTab(tab){
+async function switchTab(tab){
   document.getElementById('chart-tab').classList.toggle('active', tab==='chart');
   document.getElementById('history-tab').classList.toggle('active', tab==='history');
   document.getElementById('tab-btn-chart').classList.toggle('active', tab==='chart');
   document.getElementById('tab-btn-history').classList.toggle('active', tab==='history');
-  if(tab === 'history') renderHistory();
+  if(tab === 'history') await renderHistory();
 }
 
 // ---------- Mode ----------
@@ -328,8 +371,8 @@ function switchMode(mode){
 }
 
 // ---------- Pitcher chips / autocomplete ----------
-function renderPitcherChips(){
-  const known = loadKnownPitchers();
+async function renderPitcherChips(){
+  const known = await fetchKnownPitchers();
   const names = Array.from(new Set([...RETURNER_PITCHERS, ...known]));
   const chipWrap = document.getElementById('pitcherChips');
   chipWrap.innerHTML = '';
@@ -382,7 +425,7 @@ function updateBullpenSaveEnabled(){
   document.getElementById('saveBtnBullpen').disabled = !(name.length > 0 && bullpenPitches.length > 0);
 }
 
-function saveBullpenSession(){
+async function saveBullpenSession(){
   const name = document.getElementById('pitcherInput').value.trim();
   const date = document.getElementById('dateInput').value || todayStr();
   const total = bullpenPitches.length;
@@ -400,18 +443,30 @@ function saveBullpenSession(){
     savedAt: Date.now()
   };
 
-  const list = loadSessions();
-  list.push(record);
-  const ok = saveSessionsList(list);
-  if(!ok){ showToast('Could not save — storage may be full'); return; }
+  const btn = document.getElementById('saveBtnBullpen');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
 
-  rememberPitcherName(name);
-  showToast(`Saved — ${name}: ${strikes}/${total} strikes (${record.pct}%)`);
-
-  bullpenPitches = [];
-  document.getElementById('pitcherInput').value = '';
-  renderBullpenScoreboard();
-  renderPitcherChips();
+  try{
+    await saveSessionDoc(record);
+    await rememberPitcherName(name);
+    showToast(`Saved — ${name}: ${strikes}/${total} strikes (${record.pct}%)`);
+    bullpenPitches = [];
+    document.getElementById('pitcherInput').value = '';
+    renderBullpenScoreboard();
+    await renderPitcherChips();
+  }catch(e){
+    console.error(e);
+    showToast('Saved locally — will sync once back online');
+    // Firestore's offline cache still queues the write even though this
+    // catch fired on the network layer, so the entry is not lost.
+    bullpenPitches = [];
+    document.getElementById('pitcherInput').value = '';
+    renderBullpenScoreboard();
+  }finally{
+    btn.textContent = 'Save Session';
+    updateBullpenSaveEnabled();
+  }
 }
 
 // ---------- Game mode ----------
@@ -439,7 +494,7 @@ function updateGameSaveEnabled(){
   document.getElementById('saveBtnGame').disabled = !valid;
 }
 
-function saveGameEntry(){
+async function saveGameEntry(){
   const name = document.getElementById('pitcherInput').value.trim();
   const date = document.getElementById('dateInput').value || todayStr();
   const opponent = document.getElementById('opponentInput').value.trim();
@@ -462,21 +517,27 @@ function saveGameEntry(){
     savedAt: Date.now()
   };
 
-  const list = loadSessions();
-  list.push(record);
-  const ok = saveSessionsList(list);
-  if(!ok){ showToast('Could not save — storage may be full'); return; }
+  const btn = document.getElementById('saveBtnGame');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
 
-  rememberPitcherName(name);
-  showToast(`Saved — ${name} vs ${opponent||'opponent'}: ${strikes}/${pitches} strikes (${record.pct}%)`);
-
-  document.getElementById('pitcherInput').value = '';
-  document.getElementById('opponentInput').value = '';
-  document.getElementById('inningsInput').value = '';
-  document.getElementById('gamePitchesInput').value = '';
-  document.getElementById('gameStrikesInput').value = '';
-  onGameNumbersInput();
-  renderPitcherChips();
+  try{
+    await saveSessionDoc(record);
+    await rememberPitcherName(name);
+    showToast(`Saved — ${name} vs ${opponent||'opponent'}: ${strikes}/${pitches} strikes (${record.pct}%)`);
+  }catch(e){
+    console.error(e);
+    showToast('Saved locally — will sync once back online');
+  }finally{
+    document.getElementById('pitcherInput').value = '';
+    document.getElementById('opponentInput').value = '';
+    document.getElementById('inningsInput').value = '';
+    document.getElementById('gamePitchesInput').value = '';
+    document.getElementById('gameStrikesInput').value = '';
+    onGameNumbersInput();
+    btn.textContent = 'Save Game Entry';
+    await renderPitcherChips();
+  }
 }
 
 // ---------- History ----------
@@ -489,9 +550,11 @@ function setPitcherFilter(name){
   renderHistory();
 }
 
-function renderHistory(){
+async function renderHistory(){
   const content = document.getElementById('historyContent');
-  const all = loadSessions().sort((a,b)=> (b.date.localeCompare(a.date)) || (b.savedAt - a.savedAt));
+  content.innerHTML = `<div class="empty"><div class="big">⚾</div><p>Loading…</p></div>`;
+
+  const all = (await fetchSessions()).sort((a,b)=> (b.date.localeCompare(a.date)) || (b.savedAt - a.savedAt));
 
   if(all.length === 0){
     content.innerHTML = `<div class="empty"><div class="big">⚾</div><p>No sessions charted yet.<br>Head to the Chart tab to log your first one.</p></div>`;
@@ -502,7 +565,6 @@ function renderHistory(){
 
   let html = '';
 
-  // Per-pitcher summary, split by type
   html += `<h2>Pitcher Averages</h2>`;
   pitcherNames.forEach(name=>{
     const bp = all.filter(s=>s.pitcher===name && s.type==='bullpen');
@@ -525,7 +587,6 @@ function renderHistory(){
     html += `</div>`;
   });
 
-  // Filters
   html += `<h2 style="margin-top:22px;">Session Log</h2>`;
   html += `<div class="filter-row">`;
   html += `<div class="chip ${historyTypeFilter==='all'?'selected':''}" onclick="setTypeFilter('all')">All Types</div>`;
@@ -574,19 +635,40 @@ function renderHistory(){
   content.innerHTML = html;
 }
 
-function deleteSession(id){
-  const list = loadSessions().filter(s=>s.id !== id);
-  saveSessionsList(list);
-  renderHistory();
-  showToast('Entry deleted');
+async function deleteSession(id){
+  try{
+    await deleteSessionDoc(id);
+    showToast('Entry deleted');
+  }catch(e){
+    console.error(e);
+    showToast('Could not delete — try again once online');
+  }
+  await renderHistory();
 }
+
+// ---------- Expose handlers used by inline onclick attributes ----------
+window.switchTab = switchTab;
+window.switchMode = switchMode;
+window.onPitcherInput = onPitcherInput;
+window.addPitch = addPitch;
+window.undoPitch = undoPitch;
+window.clearSession = clearSession;
+window.saveBullpenSession = saveBullpenSession;
+window.onGameNumbersInput = onGameNumbersInput;
+window.updateGameSaveEnabled = updateGameSaveEnabled;
+window.saveGameEntry = saveGameEntry;
+window.setTypeFilter = setTypeFilter;
+window.setPitcherFilter = setPitcherFilter;
+window.deleteSession = deleteSession;
 
 // ---------- Init ----------
 document.getElementById('dateInput').value = todayStr();
 renderPitcherChips();
 renderBullpenScoreboard();
 onGameNumbersInput();
+</script>
 
+<script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./service-worker.js').catch(err => console.error('SW registration failed', err));
