@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<title>Cubs Bullpen & Game Charting</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#0E3386">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cubs Chart">
+<style>
+  :root{
+    --navy:#0E3386;
+    --navy-dark:#0A2560;
+    --red:#CC3333;
+    --green:#2E9E4F;
+    --slate:#5B6472;
+    --slate-dark:#454C57;
+    --gray-light:#F2F2F2;
+    --gray-mid:#8A8F98;
+    --line:#DADFE5;
+    --white:#FFFFFF;
+    --ink:#1B2430;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--gray-light);
+    color:var(--ink);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  #app{max-width:520px;margin:0 auto;min-height:100vh;background:var(--white);display:flex;flex-direction:column;}
+
+  header{
+    background:var(--navy);
+    color:var(--white);
+    padding:calc(env(safe-area-inset-top) + 14px) 20px 16px;
+  }
+  header .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#AEC0EA;font-weight:600;margin-bottom:2px;}
+  header h1{margin:0;font-size:20px;font-weight:800;letter-spacing:-.01em;}
+
+  nav{display:flex;border-bottom:1px solid var(--line);background:var(--white);}
+  nav button{flex:1;padding:13px 8px;border:none;background:none;font-size:14px;font-weight:700;color:var(--gray-mid);border-bottom:3px solid transparent;cursor:pointer;}
+  nav button.active{color:var(--navy);border-bottom-color:var(--navy);}
+
+  main{flex:1;padding:18px 18px 40px;}
+  section{display:none;}
+  section.active{display:block;}
+
+  .mode-toggle{display:flex;gap:8px;margin-bottom:18px;background:var(--gray-light);padding:4px;border-radius:12px;}
+  .mode-toggle button{
+    flex:1;padding:10px 8px;border:none;border-radius:9px;background:none;
+    font-size:14px;font-weight:700;color:var(--slate-dark);cursor:pointer;
+  }
+  .mode-toggle button.active{background:var(--white);color:var(--navy);box-shadow:0 1px 3px rgba(0,0,0,.12);}
+
+  label{display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--slate);margin:0 0 6px;}
+  .field{margin-bottom:14px;}
+  input[type=text], input[type=date], input[type=number]{
+    width:100%;padding:12px 12px;font-size:16px;border:1.5px solid var(--line);border-radius:10px;background:var(--white);color:var(--ink);
+  }
+  input:focus{outline:none;border-color:var(--navy);}
+  .two-col{display:flex;gap:10px;}
+  .two-col .field{flex:1;}
+  .optional-tag{font-weight:500;text-transform:none;letter-spacing:0;color:var(--gray-mid);}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+  .chip{padding:7px 13px;border-radius:999px;border:1.5px solid var(--line);background:var(--white);font-size:13px;font-weight:600;color:var(--slate-dark);cursor:pointer;}
+  .chip.selected{background:var(--navy);border-color:var(--navy);color:var(--white);}
+
+  .scoreboard{display:flex;justify-content:space-between;align-items:center;background:var(--navy-dark);color:var(--white);border-radius:14px;padding:18px 20px;margin:18px 0 14px;}
+  .scoreboard .stat{text-align:center;flex:1;}
+  .scoreboard .stat .num{font-size:26px;font-weight:800;line-height:1;}
+  .scoreboard .stat .lbl{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#AEC0EA;margin-top:4px;}
+  .scoreboard .divider{width:1px;height:34px;background:rgba(255,255,255,.2);}
+
+  .tap-row{display:flex;gap:12px;margin-bottom:12px;}
+  .tap-btn{flex:1;padding:26px 10px;border:none;border-radius:16px;font-size:19px;font-weight:800;letter-spacing:.02em;color:var(--white);cursor:pointer;-webkit-user-select:none;user-select:none;box-shadow:0 3px 0 rgba(0,0,0,.15);}
+  .tap-btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.15);}
+  .tap-btn.strike{background:var(--green);}
+  .tap-btn.ball{background:var(--slate);}
+  .tap-btn .sub{display:block;font-size:12px;font-weight:600;opacity:.85;margin-top:3px;}
+
+  .util-row{display:flex;gap:10px;margin-bottom:20px;}
+  .util-btn{flex:1;padding:11px;border-radius:10px;border:1.5px solid var(--line);background:var(--white);color:var(--slate-dark);font-size:13px;font-weight:700;cursor:pointer;}
+
+  .save-btn{width:100%;padding:15px;border:none;border-radius:12px;background:var(--red);color:var(--white);font-size:16px;font-weight:800;cursor:pointer;}
+  .save-btn:disabled{background:#E0AFAF;cursor:not-allowed;}
+
+  .hint{font-size:12px;color:var(--gray-mid);margin-top:10px;text-align:center;}
+  .error-msg{font-size:12px;color:var(--red);margin-top:-8px;margin-bottom:12px;font-weight:600;}
+
+  .summary-card{border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;}
+  .summary-card .name{font-size:15px;font-weight:800;color:var(--navy);margin-bottom:6px;}
+  .summary-card .row1{display:flex;justify-content:space-between;align-items:baseline;}
+  .summary-card .row1 + .row1{margin-top:4px;}
+  .summary-card .typelbl{font-size:12px;font-weight:700;color:var(--slate-dark);}
+  .summary-card .avg{font-size:15px;font-weight:800;}
+  .summary-card .meta{font-size:11px;color:var(--gray-mid);}
+
+  .filter-row{display:flex;gap:8px;overflow-x:auto;margin-bottom:10px;padding-bottom:2px;}
+  .filter-row .chip{white-space:nowrap;flex:none;}
+
+  .session-item{display:flex;justify-content:space-between;align-items:center;padding:12px 4px;border-bottom:1px solid var(--line);}
+  .session-item .left .pname{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px;}
+  .session-item .badge{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;padding:2px 6px;border-radius:5px;}
+  .badge.bullpen{background:#E7EEFB;color:var(--navy);}
+  .badge.game{background:#FBEAEA;color:var(--red);}
+  .session-item .date{font-size:12px;color:var(--gray-mid);margin-top:2px;}
+  .session-item .extra{font-size:11px;color:var(--gray-mid);margin-top:1px;}
+  .session-item .right{display:flex;align-items:center;gap:14px;}
+  .session-item .pct{font-size:16px;font-weight:800;color:var(--navy);}
+  .session-item .counts{font-size:11px;color:var(--gray-mid);}
+  .del-btn{background:none;border:none;color:var(--gray-mid);font-size:18px;padding:4px 6px;cursor:pointer;}
+
+  .empty{text-align:center;padding:50px 20px;color:var(--gray-mid);}
+  .empty .big{font-size:34px;margin-bottom:8px;}
+  .empty p{font-size:13px;line-height:1.5;margin:0;}
+
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--white);padding:10px 18px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:50;max-width:90%;text-align:center;}
+  .toast.show{opacity:1;}
+
+  section h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--slate);margin:0 0 10px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="eyebrow">Turlock National Little League</div>
+    <h1>Cubs Bullpen &amp; Game Charting</h1>
+  </header>
+
+  <nav>
+    <button id="tab-btn-chart" class="active" onclick="switchTab('chart')">Chart</button>
+    <button id="tab-btn-history" onclick="switchTab('history')">History</button>
+  </nav>
+
+  <main>
+
+    <!-- CHART TAB -->
+    <section id="chart-tab" class="active">
+
+      <div class="mode-toggle">
+        <button id="mode-btn-bullpen" class="active" onclick="switchMode('bullpen')">Bullpen</button>
+        <button id="mode-btn-game" onclick="switchMode('game')">Game</button>
+      </div>
+
+      <!-- Shared pitcher + date fields -->
+      <div class="field">
+        <label for="pitcherInput">Pitcher</label>
+        <input type="text" id="pitcherInput" list="pitcherList" placeholder="Type or pick a name" oninput="onPitcherInput()">
+        <datalist id="pitcherList"></datalist>
+        <div class="chips" id="pitcherChips"></div>
+      </div>
+
+      <div class="field">
+        <label for="dateInput">Date</label>
+        <input type="date" id="dateInput">
+      </div>
+
+      <!-- BULLPEN MODE -->
+      <div id="bullpen-mode">
+        <div class="scoreboard">
+          <div class="stat"><div class="num" id="scPitches">0</div><div class="lbl">Pitches</div></div>
+          <div class="divider"></div>
+          <div class="stat"><div class="num" id="scStrikes">0</div><div class="lbl">Strikes</div></div>
+          <div class="divider"></div>
+          <div class="stat"><div class="num" id="scPct">—</div><div class="lbl">% Strikes</div></div>
+        </div>
+
+        <div class="tap-row">
+          <button class="tap-btn strike" onclick="addPitch('S')">STRIKE<span class="sub">tap for each strike</span></button>
+          <button class="tap-btn ball" onclick="addPitch('B')">BALL<span class="sub">tap for each ball</span></button>
+        </div>
+
+        <div class="util-row">
+          <button class="util-btn" onclick="undoPitch()">Undo Last Pitch</button>
+          <button class="util-btn" onclick="clearSession()">Clear Session</button>
+        </div>
+
+        <button class="save-btn" id="saveBtnBullpen" onclick="saveBullpenSession()" disabled>Save Session</button>
+        <div class="hint">One row per pitcher, per bullpen session.</div>
+      </div>
+
+      <!-- GAME MODE -->
+      <div id="game-mode" style="display:none;">
+        <div class="field">
+          <label for="opponentInput">Opponent <span class="optional-tag">(optional)</span></label>
+          <input type="text" id="opponentInput" placeholder="e.g. Dodgers" oninput="updateGameSaveEnabled()">
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <label for="inningsInput">Innings Pitched <span class="optional-tag">(optional)</span></label>
+            <input type="text" id="inningsInput" placeholder="e.g. 2.1" oninput="updateGameSaveEnabled()">
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <label for="gamePitchesInput">Total Pitches</label>
+            <input type="number" id="gamePitchesInput" min="0" inputmode="numeric" placeholder="0" oninput="onGameNumbersInput()">
+          </div>
+          <div class="field">
+            <label for="gameStrikesInput">Strikes</label>
+            <input type="number" id="gameStrikesInput" min="0" inputmode="numeric" placeholder="0" oninput="onGameNumbersInput()">
+          </div>
+        </div>
+
+        <div class="error-msg" id="gameError" style="display:none;">Strikes can't be more than total pitches.</div>
+
+        <div class="scoreboard">
+          <div class="stat"><div class="num" id="gPitches">0</div><div class="lbl">Pitches</div></div>
+          <div class="divider"></div>
+          <div class="stat"><div class="num" id="gStrikes">0</div><div class="lbl">Strikes</div></div>
+          <div class="divider"></div>
+          <div class="stat"><div class="num" id="gPct">—</div><div class="lbl">% Strikes</div></div>
+        </div>
+
+        <button class="save-btn" id="saveBtnGame" onclick="saveGameEntry()" disabled>Save Game Entry</button>
+        <div class="hint">Enter final totals after the game — no need to tap pitch by pitch.</div>
+      </div>
+
+    </section>
+
+    <!-- HISTORY TAB -->
+    <section id="history-tab">
+      <div id="historyContent">
+        <div class="empty">
+          <div class="big">⚾</div>
+          <p>No sessions charted yet.<br>Head to the Chart tab to log your first one.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SESSIONS_KEY = 'cubs_sessions_v1';
+const KNOWN_PITCHERS_KEY = 'cubs_known_pitchers_v1';
+const RETURNER_PITCHERS = ['Jaxson','Lane','Kai','Israel'];
+
+let currentMode = 'bullpen'; // 'bullpen' | 'game'
+let bullpenPitches = []; // 'S' or 'B'
+let historyTypeFilter = 'all'; // 'all' | 'bullpen' | 'game'
+let historyPitcherFilter = 'all';
+
+// ---------- Storage helpers (local device only) ----------
+function loadSessions(){
+  try{
+    const raw = localStorage.getItem(SESSIONS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ console.error(e); return []; }
+}
+function saveSessionsList(list){
+  try{
+    localStorage.setItem(SESSIONS_KEY, JSON.stringify(list));
+    return true;
+  }catch(e){ console.error(e); return false; }
+}
+function loadKnownPitchers(){
+  try{
+    const raw = localStorage.getItem(KNOWN_PITCHERS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ return []; }
+}
+function saveKnownPitchers(list){
+  try{ localStorage.setItem(KNOWN_PITCHERS_KEY, JSON.stringify(list)); }catch(e){ console.error(e); }
+}
+function rememberPitcherName(name){
+  const known = loadKnownPitchers();
+  if(!known.includes(name)){
+    known.push(name);
+    saveKnownPitchers(known);
+  }
+}
+
+function todayStr(){
+  const d = new Date();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(str){ return String(str).replace(/'/g, "\\'"); }
+
+function formatDate(iso){
+  const [y,m,d] = iso.split('-');
+  const dt = new Date(Number(y), Number(m)-1, Number(d));
+  return dt.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+}
+
+// ---------- Tabs ----------
+function switchTab(tab){
+  document.getElementById('chart-tab').classList.toggle('active', tab==='chart');
+  document.getElementById('history-tab').classList.toggle('active', tab==='history');
+  document.getElementById('tab-btn-chart').classList.toggle('active', tab==='chart');
+  document.getElementById('tab-btn-history').classList.toggle('active', tab==='history');
+  if(tab === 'history') renderHistory();
+}
+
+// ---------- Mode ----------
+function switchMode(mode){
+  currentMode = mode;
+  document.getElementById('mode-btn-bullpen').classList.toggle('active', mode==='bullpen');
+  document.getElementById('mode-btn-game').classList.toggle('active', mode==='game');
+  document.getElementById('bullpen-mode').style.display = mode==='bullpen' ? 'block' : 'none';
+  document.getElementById('game-mode').style.display = mode==='game' ? 'block' : 'none';
+}
+
+// ---------- Pitcher chips / autocomplete ----------
+function renderPitcherChips(){
+  const known = loadKnownPitchers();
+  const names = Array.from(new Set([...RETURNER_PITCHERS, ...known]));
+  const chipWrap = document.getElementById('pitcherChips');
+  chipWrap.innerHTML = '';
+  names.forEach(name=>{
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.textContent = name;
+    chip.onclick = ()=>{
+      document.getElementById('pitcherInput').value = name;
+      onPitcherInput();
+    };
+    chipWrap.appendChild(chip);
+  });
+  const datalist = document.getElementById('pitcherList');
+  datalist.innerHTML = names.map(n=>`<option value="${escapeHtml(n)}">`).join('');
+}
+
+function onPitcherInput(){
+  const val = document.getElementById('pitcherInput').value.trim();
+  document.querySelectorAll('#pitcherChips .chip').forEach(c=>{
+    c.classList.toggle('selected', c.textContent === val);
+  });
+  updateBullpenSaveEnabled();
+  updateGameSaveEnabled();
+}
+
+// ---------- Bullpen mode ----------
+function addPitch(type){
+  bullpenPitches.push(type);
+  renderBullpenScoreboard();
+}
+function undoPitch(){
+  bullpenPitches.pop();
+  renderBullpenScoreboard();
+}
+function clearSession(){
+  bullpenPitches = [];
+  renderBullpenScoreboard();
+}
+function renderBullpenScoreboard(){
+  const total = bullpenPitches.length;
+  const strikes = bullpenPitches.filter(p=>p==='S').length;
+  document.getElementById('scPitches').textContent = total;
+  document.getElementById('scStrikes').textContent = strikes;
+  document.getElementById('scPct').textContent = total ? Math.round((strikes/total)*100)+'%' : '—';
+  updateBullpenSaveEnabled();
+}
+function updateBullpenSaveEnabled(){
+  const name = document.getElementById('pitcherInput').value.trim();
+  document.getElementById('saveBtnBullpen').disabled = !(name.length > 0 && bullpenPitches.length > 0);
+}
+
+function saveBullpenSession(){
+  const name = document.getElementById('pitcherInput').value.trim();
+  const date = document.getElementById('dateInput').value || todayStr();
+  const total = bullpenPitches.length;
+  const strikes = bullpenPitches.filter(p=>p==='S').length;
+  if(!name || total === 0) return;
+
+  const record = {
+    id: 'bp_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+    type: 'bullpen',
+    pitcher: name,
+    date: date,
+    totalPitches: total,
+    strikes: strikes,
+    pct: Math.round((strikes/total)*100),
+    savedAt: Date.now()
+  };
+
+  const list = loadSessions();
+  list.push(record);
+  const ok = saveSessionsList(list);
+  if(!ok){ showToast('Could not save — storage may be full'); return; }
+
+  rememberPitcherName(name);
+  showToast(`Saved — ${name}: ${strikes}/${total} strikes (${record.pct}%)`);
+
+  bullpenPitches = [];
+  document.getElementById('pitcherInput').value = '';
+  renderBullpenScoreboard();
+  renderPitcherChips();
+}
+
+// ---------- Game mode ----------
+function onGameNumbersInput(){
+  const pitches = parseInt(document.getElementById('gamePitchesInput').value, 10) || 0;
+  const strikes = parseInt(document.getElementById('gameStrikesInput').value, 10) || 0;
+  document.getElementById('gPitches').textContent = pitches;
+  document.getElementById('gStrikes').textContent = strikes;
+  const errEl = document.getElementById('gameError');
+  if(strikes > pitches && pitches > 0){
+    errEl.style.display = 'block';
+    document.getElementById('gPct').textContent = '—';
+  }else{
+    errEl.style.display = 'none';
+    document.getElementById('gPct').textContent = pitches ? Math.round((strikes/pitches)*100)+'%' : '—';
+  }
+  updateGameSaveEnabled();
+}
+
+function updateGameSaveEnabled(){
+  const name = document.getElementById('pitcherInput').value.trim();
+  const pitches = parseInt(document.getElementById('gamePitchesInput').value, 10) || 0;
+  const strikes = parseInt(document.getElementById('gameStrikesInput').value, 10) || 0;
+  const valid = name.length > 0 && pitches > 0 && strikes <= pitches;
+  document.getElementById('saveBtnGame').disabled = !valid;
+}
+
+function saveGameEntry(){
+  const name = document.getElementById('pitcherInput').value.trim();
+  const date = document.getElementById('dateInput').value || todayStr();
+  const opponent = document.getElementById('opponentInput').value.trim();
+  const innings = document.getElementById('inningsInput').value.trim();
+  const pitches = parseInt(document.getElementById('gamePitchesInput').value, 10) || 0;
+  const strikes = parseInt(document.getElementById('gameStrikesInput').value, 10) || 0;
+
+  if(!name || pitches <= 0 || strikes > pitches) return;
+
+  const record = {
+    id: 'gm_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+    type: 'game',
+    pitcher: name,
+    date: date,
+    opponent: opponent || null,
+    innings: innings || null,
+    totalPitches: pitches,
+    strikes: strikes,
+    pct: Math.round((strikes/pitches)*100),
+    savedAt: Date.now()
+  };
+
+  const list = loadSessions();
+  list.push(record);
+  const ok = saveSessionsList(list);
+  if(!ok){ showToast('Could not save — storage may be full'); return; }
+
+  rememberPitcherName(name);
+  showToast(`Saved — ${name} vs ${opponent||'opponent'}: ${strikes}/${pitches} strikes (${record.pct}%)`);
+
+  document.getElementById('pitcherInput').value = '';
+  document.getElementById('opponentInput').value = '';
+  document.getElementById('inningsInput').value = '';
+  document.getElementById('gamePitchesInput').value = '';
+  document.getElementById('gameStrikesInput').value = '';
+  onGameNumbersInput();
+  renderPitcherChips();
+}
+
+// ---------- History ----------
+function setTypeFilter(type){
+  historyTypeFilter = type;
+  renderHistory();
+}
+function setPitcherFilter(name){
+  historyPitcherFilter = name;
+  renderHistory();
+}
+
+function renderHistory(){
+  const content = document.getElementById('historyContent');
+  const all = loadSessions().sort((a,b)=> (b.date.localeCompare(a.date)) || (b.savedAt - a.savedAt));
+
+  if(all.length === 0){
+    content.innerHTML = `<div class="empty"><div class="big">⚾</div><p>No sessions charted yet.<br>Head to the Chart tab to log your first one.</p></div>`;
+    return;
+  }
+
+  const pitcherNames = Array.from(new Set(all.map(s=>s.pitcher))).sort();
+
+  let html = '';
+
+  // Per-pitcher summary, split by type
+  html += `<h2>Pitcher Averages</h2>`;
+  pitcherNames.forEach(name=>{
+    const bp = all.filter(s=>s.pitcher===name && s.type==='bullpen');
+    const gm = all.filter(s=>s.pitcher===name && s.type==='game');
+    html += `<div class="summary-card"><div class="name">${escapeHtml(name)}</div>`;
+    if(bp.length){
+      const tp = bp.reduce((a,s)=>a+s.totalPitches,0);
+      const ts = bp.reduce((a,s)=>a+s.strikes,0);
+      const avg = tp ? Math.round((ts/tp)*100) : 0;
+      html += `<div class="row1"><span class="typelbl">Bullpen</span><span class="avg">${avg}%</span></div>
+                <div class="meta">${bp.length} session${bp.length>1?'s':''}</div>`;
+    }
+    if(gm.length){
+      const tp = gm.reduce((a,s)=>a+s.totalPitches,0);
+      const ts = gm.reduce((a,s)=>a+s.strikes,0);
+      const avg = tp ? Math.round((ts/tp)*100) : 0;
+      html += `<div class="row1" style="margin-top:${bp.length?'8px':'0'};"><span class="typelbl">Game</span><span class="avg">${avg}%</span></div>
+                <div class="meta">${gm.length} outing${gm.length>1?'s':''}</div>`;
+    }
+    html += `</div>`;
+  });
+
+  // Filters
+  html += `<h2 style="margin-top:22px;">Session Log</h2>`;
+  html += `<div class="filter-row">`;
+  html += `<div class="chip ${historyTypeFilter==='all'?'selected':''}" onclick="setTypeFilter('all')">All Types</div>`;
+  html += `<div class="chip ${historyTypeFilter==='bullpen'?'selected':''}" onclick="setTypeFilter('bullpen')">Bullpen</div>`;
+  html += `<div class="chip ${historyTypeFilter==='game'?'selected':''}" onclick="setTypeFilter('game')">Game</div>`;
+  html += `</div>`;
+  html += `<div class="filter-row">`;
+  html += `<div class="chip ${historyPitcherFilter==='all'?'selected':''}" onclick="setPitcherFilter('all')">All Pitchers</div>`;
+  pitcherNames.forEach(name=>{
+    html += `<div class="chip ${historyPitcherFilter===name?'selected':''}" onclick="setPitcherFilter('${escapeAttr(name)}')">${escapeHtml(name)}</div>`;
+  });
+  html += `</div>`;
+
+  const visible = all.filter(s=>
+    (historyTypeFilter==='all' || s.type===historyTypeFilter) &&
+    (historyPitcherFilter==='all' || s.pitcher===historyPitcherFilter)
+  );
+
+  if(visible.length === 0){
+    html += `<div class="empty"><p>No sessions match these filters.</p></div>`;
+  }else{
+    visible.forEach(s=>{
+      const extraBits = [];
+      if(s.type==='game'){
+        if(s.opponent) extraBits.push(`vs ${escapeHtml(s.opponent)}`);
+        if(s.innings) extraBits.push(`${escapeHtml(s.innings)} IP`);
+      }
+      html += `
+        <div class="session-item">
+          <div class="left">
+            <div class="pname">${escapeHtml(s.pitcher)} <span class="badge ${s.type}">${s.type}</span></div>
+            <div class="date">${formatDate(s.date)}</div>
+            ${extraBits.length ? `<div class="extra">${extraBits.join(' · ')}</div>` : ''}
+          </div>
+          <div class="right">
+            <div>
+              <div class="pct">${s.pct}%</div>
+              <div class="counts">${s.strikes}/${s.totalPitches} strikes</div>
+            </div>
+            <button class="del-btn" onclick="deleteSession('${s.id}')" aria-label="Delete">✕</button>
+          </div>
+        </div>`;
+    });
+  }
+
+  content.innerHTML = html;
+}
+
+function deleteSession(id){
+  const list = loadSessions().filter(s=>s.id !== id);
+  saveSessionsList(list);
+  renderHistory();
+  showToast('Entry deleted');
+}
+
+// ---------- Init ----------
+document.getElementById('dateInput').value = todayStr();
+renderPitcherChips();
+renderBullpenScoreboard();
+onGameNumbersInput();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js').catch(err => console.error('SW registration failed', err));
+  });
+}
+</script>
+</body>
+</html>
