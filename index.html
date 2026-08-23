@@ -17,6 +17,10 @@
     --navy-dark:#0A2560;
     --red:#CC3333;
     --green:#2E9E4F;
+    --green-dark:#237A3D;
+    --green-bg:#E7F4EC;
+    --red-dark:#A32D2D;
+    --red-bg:#FBEAEA;
     --slate:#5B6472;
     --slate-dark:#454C57;
     --gray-light:#F2F2F2;
@@ -48,7 +52,7 @@
   header .team-logo{width:46px;height:46px;object-fit:contain;flex-shrink:0;border-radius:8px;background:var(--white);padding:3px;}
 
   nav{display:flex;border-bottom:1px solid var(--line);background:var(--white);}
-  nav button{flex:1;padding:13px 8px;border:none;background:none;font-size:14px;font-weight:700;color:var(--gray-mid);border-bottom:3px solid transparent;cursor:pointer;}
+  nav button{flex:1;padding:13px 6px;border:none;background:none;font-size:13px;font-weight:700;color:var(--gray-mid);border-bottom:3px solid transparent;cursor:pointer;}
   nav button.active{color:var(--navy);border-bottom-color:var(--navy);}
 
   main{flex:1;padding:18px 18px 40px;}
@@ -64,10 +68,11 @@
 
   label{display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--slate);margin:0 0 6px;}
   .field{margin-bottom:14px;}
-  input[type=text], input[type=date], input[type=number]{
-    width:100%;padding:12px 12px;font-size:16px;border:1.5px solid var(--line);border-radius:10px;background:var(--white);color:var(--ink);
+  input[type=text], input[type=date], input[type=number], textarea{
+    width:100%;padding:12px 12px;font-size:16px;border:1.5px solid var(--line);border-radius:10px;background:var(--white);color:var(--ink);font-family:inherit;
   }
-  input:focus{outline:none;border-color:var(--navy);}
+  textarea{resize:vertical;min-height:56px;}
+  input:focus, textarea:focus{outline:none;border-color:var(--navy);}
   .two-col{display:flex;gap:10px;}
   .two-col .field{flex:1;}
   .optional-tag{font-weight:500;text-transform:none;letter-spacing:0;color:var(--gray-mid);}
@@ -98,28 +103,42 @@
   .hint{font-size:12px;color:var(--gray-mid);margin-top:10px;text-align:center;}
   .error-msg{font-size:12px;color:var(--red);margin-top:-8px;margin-bottom:12px;font-weight:600;}
 
-  .summary-card{border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;}
+  .summary-card{border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;cursor:pointer;}
+  .summary-card:active{background:var(--gray-light);}
   .summary-card .name{font-size:15px;font-weight:800;color:var(--navy);margin-bottom:6px;}
-  .summary-card .row1{display:flex;justify-content:space-between;align-items:baseline;}
+  .summary-card .row1{display:flex;justify-content:space-between;align-items:center;}
   .summary-card .row1 + .row1{margin-top:4px;}
   .summary-card .typelbl{font-size:12px;font-weight:700;color:var(--slate-dark);}
+  .summary-card .avg-wrap{display:flex;align-items:center;gap:6px;}
   .summary-card .avg{font-size:15px;font-weight:800;}
   .summary-card .meta{font-size:11px;color:var(--gray-mid);}
+
+  .trend-badge{display:inline-flex;align-items:center;gap:2px;font-size:11px;font-weight:700;padding:2px 6px;border-radius:6px;}
+  .trend-badge.up{color:var(--green-dark);background:var(--green-bg);}
+  .trend-badge.down{color:var(--red-dark);background:var(--red-bg);}
 
   .filter-row{display:flex;gap:8px;overflow-x:auto;margin-bottom:10px;padding-bottom:2px;}
   .filter-row .chip{white-space:nowrap;flex:none;}
 
-  .session-item{display:flex;justify-content:space-between;align-items:center;padding:12px 4px;border-bottom:1px solid var(--line);}
+  .session-item{display:flex;justify-content:space-between;align-items:flex-start;padding:12px 4px;border-bottom:1px solid var(--line);}
   .session-item .left .pname{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px;}
   .session-item .badge{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;padding:2px 6px;border-radius:5px;}
   .badge.bullpen{background:#E7EEFB;color:var(--navy);}
-  .badge.game{background:#FBEAEA;color:var(--red);}
+  .badge.game{background:var(--red-bg);color:var(--red);}
   .session-item .date{font-size:12px;color:var(--gray-mid);margin-top:2px;}
   .session-item .extra{font-size:11px;color:var(--gray-mid);margin-top:1px;}
-  .session-item .right{display:flex;align-items:center;gap:14px;}
+  .session-item .note{font-size:11px;color:var(--slate-dark);font-style:italic;margin-top:3px;max-width:220px;}
+  .session-item .right{display:flex;align-items:center;gap:14px;flex-shrink:0;}
   .session-item .pct{font-size:16px;font-weight:800;color:var(--navy);}
   .session-item .counts{font-size:11px;color:var(--gray-mid);}
   .del-btn{background:none;border:none;color:var(--gray-mid);font-size:18px;padding:4px 6px;cursor:pointer;}
+
+  .eligible-item{display:flex;justify-content:space-between;align-items:center;padding:13px 4px;border-bottom:1px solid var(--line);}
+  .eligible-item .pname{font-size:15px;font-weight:700;}
+  .eligible-item .sub{font-size:11px;color:var(--gray-mid);margin-top:2px;}
+  .status-pill{font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;white-space:nowrap;}
+  .status-pill.eligible{background:var(--green-bg);color:var(--green-dark);}
+  .status-pill.resting{background:var(--red-bg);color:var(--red-dark);}
 
   .empty{text-align:center;padding:50px 20px;color:var(--gray-mid);}
   .empty .big{font-size:34px;margin-bottom:8px;}
@@ -148,6 +167,7 @@
   <nav>
     <button id="tab-btn-chart" class="active" onclick="switchTab('chart')">Chart</button>
     <button id="tab-btn-history" onclick="switchTab('history')">History</button>
+    <button id="tab-btn-eligible" onclick="switchTab('eligible')">Eligible</button>
   </nav>
 
   <main>
@@ -192,6 +212,11 @@
           <button class="util-btn" onclick="clearSession()">Clear Session</button>
         </div>
 
+        <div class="field">
+          <label for="bullpenNotesInput">Notes <span class="optional-tag">(optional)</span></label>
+          <textarea id="bullpenNotesInput" placeholder="e.g. working on changeup grip, arm looked tired late"></textarea>
+        </div>
+
         <button class="save-btn" id="saveBtnBullpen" onclick="saveBullpenSession()" disabled>Save Session</button>
         <div class="hint">One row per pitcher, per bullpen session.</div>
       </div>
@@ -223,12 +248,32 @@
 
         <div class="error-msg" id="gameError" style="display:none;">Strikes can't be more than total pitches.</div>
 
+        <div class="two-col">
+          <div class="field">
+            <label for="gameHitsInput">Hits <span class="optional-tag">(opt)</span></label>
+            <input type="number" id="gameHitsInput" min="0" inputmode="numeric" placeholder="0">
+          </div>
+          <div class="field">
+            <label for="gameWalksInput">Walks <span class="optional-tag">(opt)</span></label>
+            <input type="number" id="gameWalksInput" min="0" inputmode="numeric" placeholder="0">
+          </div>
+          <div class="field">
+            <label for="gameKInput">K's <span class="optional-tag">(opt)</span></label>
+            <input type="number" id="gameKInput" min="0" inputmode="numeric" placeholder="0">
+          </div>
+        </div>
+
         <div class="scoreboard">
           <div class="stat"><div class="num" id="gPitches">0</div><div class="lbl">Pitches</div></div>
           <div class="divider"></div>
           <div class="stat"><div class="num" id="gStrikes">0</div><div class="lbl">Strikes</div></div>
           <div class="divider"></div>
           <div class="stat"><div class="num" id="gPct">—</div><div class="lbl">% Strikes</div></div>
+        </div>
+
+        <div class="field">
+          <label for="gameNotesInput">Notes <span class="optional-tag">(optional)</span></label>
+          <textarea id="gameNotesInput" placeholder="e.g. lost command in the 3rd, best outing of the year"></textarea>
         </div>
 
         <button class="save-btn" id="saveBtnGame" onclick="saveGameEntry()" disabled>Save Game Entry</button>
@@ -239,13 +284,14 @@
 
     <!-- HISTORY TAB -->
     <section id="history-tab">
-      <button class="util-btn" style="width:100%;margin-bottom:16px;" onclick="exportCSV()">Export CSV</button>
-      <div id="historyContent">
-        <div class="empty">
-          <div class="big">⚾</div>
-          <p>Loading…</p>
-        </div>
-      </div>
+      <div id="historyContent"></div>
+    </section>
+
+    <!-- ELIGIBLE TAB -->
+    <section id="eligible-tab">
+      <h2>Who's Eligible Today</h2>
+      <div class="hint" style="margin:-4px 0 16px;text-align:left;">Based on Regulation VI rest requirements — game pitches only, bullpens don't count.</div>
+      <div id="eligibleContent"></div>
     </section>
 
   </main>
@@ -278,8 +324,6 @@ const firebaseConfig = {
 };
 
 const firebaseApp = initializeApp(firebaseConfig);
-// Persistent local cache = entries made with no signal at the field still save
-// instantly and sync automatically once the phone reconnects.
 const db = initializeFirestore(firebaseApp, {
   localCache: persistentLocalCache({ tabManager: persistentSingleTabManager() })
 });
@@ -345,6 +389,14 @@ function todayStr(){
   const day = String(d.getDate()).padStart(2,'0');
   return `${d.getFullYear()}-${m}-${day}`;
 }
+function addDays(iso, days){
+  const [y,m,d] = iso.split('-').map(Number);
+  const dt = new Date(y, m-1, d);
+  dt.setDate(dt.getDate() + days);
+  const mm = String(dt.getMonth()+1).padStart(2,'0');
+  const dd = String(dt.getDate()).padStart(2,'0');
+  return `${dt.getFullYear()}-${mm}-${dd}`;
+}
 function showToast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -360,14 +412,30 @@ function formatDate(iso){
   const dt = new Date(Number(y), Number(m)-1, Number(d));
   return dt.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
 }
+function parseOptionalInt(id){
+  const v = document.getElementById(id).value;
+  return v === '' ? null : (parseInt(v,10) || 0);
+}
+
+// ---------- Rest-day rule (Turlock National Little League, Regulation VI(d), league age 12 and under) ----------
+function restDaysRequired(pitches){
+  if(pitches >= 66) return 4;
+  if(pitches >= 51) return 3;
+  if(pitches >= 36) return 2;
+  if(pitches >= 21) return 1;
+  return 0;
+}
 
 // ---------- Tabs ----------
 async function switchTab(tab){
   document.getElementById('chart-tab').classList.toggle('active', tab==='chart');
   document.getElementById('history-tab').classList.toggle('active', tab==='history');
+  document.getElementById('eligible-tab').classList.toggle('active', tab==='eligible');
   document.getElementById('tab-btn-chart').classList.toggle('active', tab==='chart');
   document.getElementById('tab-btn-history').classList.toggle('active', tab==='history');
+  document.getElementById('tab-btn-eligible').classList.toggle('active', tab==='eligible');
   if(tab === 'history') await renderHistory();
+  if(tab === 'eligible') await renderEligible();
 }
 
 // ---------- Mode ----------
@@ -441,6 +509,8 @@ async function saveBullpenSession(){
   const strikes = bullpenPitches.filter(p=>p==='S').length;
   if(!name || total === 0) return;
 
+  const notes = document.getElementById('bullpenNotesInput').value.trim();
+
   const record = {
     id: 'bp_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
     type: 'bullpen',
@@ -449,6 +519,7 @@ async function saveBullpenSession(){
     totalPitches: total,
     strikes: strikes,
     pct: Math.round((strikes/total)*100),
+    notes: notes || null,
     savedAt: Date.now()
   };
 
@@ -460,21 +531,17 @@ async function saveBullpenSession(){
     await saveSessionDoc(record);
     await rememberPitcherName(name);
     showToast(`Saved — ${name}: ${strikes}/${total} strikes (${record.pct}%)`);
-    bullpenPitches = [];
-    document.getElementById('pitcherInput').value = '';
-    renderBullpenScoreboard();
-    await renderPitcherChips();
   }catch(e){
     console.error(e);
     showToast('Saved locally — will sync once back online');
-    // Firestore's offline cache still queues the write even though this
-    // catch fired on the network layer, so the entry is not lost.
+  }finally{
     bullpenPitches = [];
     document.getElementById('pitcherInput').value = '';
+    document.getElementById('bullpenNotesInput').value = '';
     renderBullpenScoreboard();
-  }finally{
     btn.textContent = 'Save Session';
     updateBullpenSaveEnabled();
+    await renderPitcherChips();
   }
 }
 
@@ -510,6 +577,10 @@ async function saveGameEntry(){
   const innings = document.getElementById('inningsInput').value.trim();
   const pitches = parseInt(document.getElementById('gamePitchesInput').value, 10) || 0;
   const strikes = parseInt(document.getElementById('gameStrikesInput').value, 10) || 0;
+  const hits = parseOptionalInt('gameHitsInput');
+  const walks = parseOptionalInt('gameWalksInput');
+  const strikeouts = parseOptionalInt('gameKInput');
+  const notes = document.getElementById('gameNotesInput').value.trim();
 
   if(!name || pitches <= 0 || strikes > pitches) return;
 
@@ -523,6 +594,10 @@ async function saveGameEntry(){
     totalPitches: pitches,
     strikes: strikes,
     pct: Math.round((strikes/pitches)*100),
+    hits: hits,
+    walks: walks,
+    strikeouts: strikeouts,
+    notes: notes || null,
     savedAt: Date.now()
   };
 
@@ -543,10 +618,39 @@ async function saveGameEntry(){
     document.getElementById('inningsInput').value = '';
     document.getElementById('gamePitchesInput').value = '';
     document.getElementById('gameStrikesInput').value = '';
+    document.getElementById('gameHitsInput').value = '';
+    document.getElementById('gameWalksInput').value = '';
+    document.getElementById('gameKInput').value = '';
+    document.getElementById('gameNotesInput').value = '';
     onGameNumbersInput();
     btn.textContent = 'Save Game Entry';
     await renderPitcherChips();
   }
+}
+
+// ---------- Trend calculation ----------
+// Compares the average of the most recent up-to-3 outings against everything
+// before that window. Returns a rounded point delta, or null if there isn't
+// enough history (fewer than 4 total sessions of that type) to say anything meaningful.
+function computeTrend(sessionsChronological){
+  if(sessionsChronological.length < 4) return null;
+  const recent = sessionsChronological.slice(-3);
+  const earlier = sessionsChronological.slice(0, -3);
+  const recentPitches = recent.reduce((a,s)=>a+s.totalPitches,0);
+  const recentStrikes = recent.reduce((a,s)=>a+s.strikes,0);
+  const earlierPitches = earlier.reduce((a,s)=>a+s.totalPitches,0);
+  const earlierStrikes = earlier.reduce((a,s)=>a+s.strikes,0);
+  if(recentPitches === 0 || earlierPitches === 0) return null;
+  const recentAvg = (recentStrikes/recentPitches)*100;
+  const earlierAvg = (earlierStrikes/earlierPitches)*100;
+  return Math.round(recentAvg - earlierAvg);
+}
+
+function trendBadgeHtml(delta){
+  if(delta === null || delta === 0) return '';
+  const dir = delta > 0 ? 'up' : 'down';
+  const arrow = delta > 0 ? '\u25B2' : '\u25BC';
+  return `<span class="trend-badge ${dir}">${arrow}${Math.abs(delta)}</span>`;
 }
 
 // ---------- History ----------
@@ -558,12 +662,20 @@ function setPitcherFilter(name){
   historyPitcherFilter = name;
   renderHistory();
 }
+function jumpToPitcher(name){
+  historyPitcherFilter = name;
+  historyTypeFilter = 'all';
+  renderHistory().then(()=>{
+    const heading = document.getElementById('sessionLogHeading');
+    if(heading) heading.scrollIntoView({behavior:'smooth', block:'start'});
+  });
+}
 
 async function renderHistory(){
   const content = document.getElementById('historyContent');
   content.innerHTML = `<div class="empty"><div class="big">⚾</div><p>Loading…</p></div>`;
 
-  const all = (await fetchSessions()).sort((a,b)=> (b.date.localeCompare(a.date)) || (b.savedAt - a.savedAt));
+  const all = (await fetchSessions()).sort((a,b)=> (a.date.localeCompare(b.date)) || (a.savedAt - b.savedAt));
 
   if(all.length === 0){
     content.innerHTML = `<div class="empty"><div class="big">⚾</div><p>No sessions charted yet.<br>Head to the Chart tab to log your first one.</p></div>`;
@@ -575,28 +687,31 @@ async function renderHistory(){
   let html = '';
 
   html += `<h2>Pitcher Averages</h2>`;
+  html += `<div class="hint" style="margin:-6px 0 12px;text-align:left;">Tap a pitcher to see their full log below.</div>`;
   pitcherNames.forEach(name=>{
     const bp = all.filter(s=>s.pitcher===name && s.type==='bullpen');
     const gm = all.filter(s=>s.pitcher===name && s.type==='game');
-    html += `<div class="summary-card"><div class="name">${escapeHtml(name)}</div>`;
+    html += `<div class="summary-card" onclick="jumpToPitcher('${escapeAttr(name)}')"><div class="name">${escapeHtml(name)}</div>`;
     if(bp.length){
       const tp = bp.reduce((a,s)=>a+s.totalPitches,0);
       const ts = bp.reduce((a,s)=>a+s.strikes,0);
       const avg = tp ? Math.round((ts/tp)*100) : 0;
-      html += `<div class="row1"><span class="typelbl">Bullpen</span><span class="avg">${avg}%</span></div>
+      const trend = computeTrend(bp);
+      html += `<div class="row1"><span class="typelbl">Bullpen</span><span class="avg-wrap"><span class="avg">${avg}%</span>${trendBadgeHtml(trend)}</span></div>
                 <div class="meta">${bp.length} session${bp.length>1?'s':''}</div>`;
     }
     if(gm.length){
       const tp = gm.reduce((a,s)=>a+s.totalPitches,0);
       const ts = gm.reduce((a,s)=>a+s.strikes,0);
       const avg = tp ? Math.round((ts/tp)*100) : 0;
-      html += `<div class="row1" style="margin-top:${bp.length?'8px':'0'};"><span class="typelbl">Game</span><span class="avg">${avg}%</span></div>
+      const trend = computeTrend(gm);
+      html += `<div class="row1" style="margin-top:${bp.length?'8px':'0'};"><span class="typelbl">Game</span><span class="avg-wrap"><span class="avg">${avg}%</span>${trendBadgeHtml(trend)}</span></div>
                 <div class="meta">${gm.length} outing${gm.length>1?'s':''}</div>`;
     }
     html += `</div>`;
   });
 
-  html += `<h2 style="margin-top:22px;">Session Log</h2>`;
+  html += `<h2 id="sessionLogHeading" style="margin-top:22px;">Session Log</h2>`;
   html += `<div class="filter-row">`;
   html += `<div class="chip ${historyTypeFilter==='all'?'selected':''}" onclick="setTypeFilter('all')">All Types</div>`;
   html += `<div class="chip ${historyTypeFilter==='bullpen'?'selected':''}" onclick="setTypeFilter('bullpen')">Bullpen</div>`;
@@ -612,7 +727,7 @@ async function renderHistory(){
   const visible = all.filter(s=>
     (historyTypeFilter==='all' || s.type===historyTypeFilter) &&
     (historyPitcherFilter==='all' || s.pitcher===historyPitcherFilter)
-  );
+  ).sort((a,b)=> (b.date.localeCompare(a.date)) || (b.savedAt - a.savedAt));
   currentVisibleSessions = visible;
 
   if(visible.length === 0){
@@ -623,6 +738,9 @@ async function renderHistory(){
       if(s.type==='game'){
         if(s.opponent) extraBits.push(`vs ${escapeHtml(s.opponent)}`);
         if(s.innings) extraBits.push(`${escapeHtml(s.innings)} IP`);
+        if(s.hits !== null && s.hits !== undefined) extraBits.push(`${s.hits} H`);
+        if(s.walks !== null && s.walks !== undefined) extraBits.push(`${s.walks} BB`);
+        if(s.strikeouts !== null && s.strikeouts !== undefined) extraBits.push(`${s.strikeouts} K`);
       }
       html += `
         <div class="session-item">
@@ -630,6 +748,7 @@ async function renderHistory(){
             <div class="pname">${escapeHtml(s.pitcher)} <span class="badge ${s.type}">${s.type}</span></div>
             <div class="date">${formatDate(s.date)}</div>
             ${extraBits.length ? `<div class="extra">${extraBits.join(' · ')}</div>` : ''}
+            ${s.notes ? `<div class="note">"${escapeHtml(s.notes)}"</div>` : ''}
           </div>
           <div class="right">
             <div>
@@ -656,44 +775,52 @@ async function deleteSession(id){
   await renderHistory();
 }
 
-// ---------- Export ----------
-function escapeCsvField(val){
-  if(val === null || val === undefined) return '';
-  const str = String(val);
-  if(/[",\n]/.test(str)){
-    return '"' + str.replace(/"/g, '""') + '"';
-  }
-  return str;
-}
+// ---------- Eligible tab ----------
+async function renderEligible(){
+  const content = document.getElementById('eligibleContent');
+  content.innerHTML = `<div class="empty"><div class="big">⚾</div><p>Loading…</p></div>`;
 
-function exportCSV(){
-  if(currentVisibleSessions.length === 0){
-    showToast('Nothing to export — open History and check your filters');
+  const [known, all] = await Promise.all([fetchKnownPitchers(), fetchSessions()]);
+  const names = Array.from(new Set([...RETURNER_PITCHERS, ...known])).sort();
+
+  if(names.length === 0){
+    content.innerHTML = `<div class="empty"><div class="big">⚾</div><p>No pitchers logged yet.</p></div>`;
     return;
   }
-  const headers = ['Date','Type','Pitcher','Opponent','Innings Pitched','Total Pitches','Strikes','% Strikes'];
-  const rows = currentVisibleSessions.map(s => [
-    s.date,
-    s.type,
-    s.pitcher,
-    s.opponent || '',
-    s.innings || '',
-    s.totalPitches,
-    s.strikes,
-    s.pct
-  ].map(escapeCsvField).join(','));
-  const csv = [headers.join(','), ...rows].join('\n');
 
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `cubs-pitching-log-${todayStr()}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  showToast(`Exported ${currentVisibleSessions.length} entries`);
+  const today = todayStr();
+  let html = '';
+
+  names.forEach(name=>{
+    const games = all.filter(s=>s.pitcher===name && s.type==='game').sort((a,b)=>b.date.localeCompare(a.date));
+    let statusHtml;
+    let subHtml = '';
+    if(games.length === 0){
+      statusHtml = `<span class="status-pill eligible">Eligible</span>`;
+      subHtml = 'No games logged yet';
+    }else{
+      const last = games[0];
+      const rest = restDaysRequired(last.totalPitches);
+      const eligibleDate = addDays(last.date, rest + 1);
+      if(today >= eligibleDate){
+        statusHtml = `<span class="status-pill eligible">Eligible</span>`;
+        subHtml = `Last pitched ${formatDate(last.date)} (${last.totalPitches} pitches)`;
+      }else{
+        statusHtml = `<span class="status-pill resting">Rest until ${formatDate(eligibleDate)}</span>`;
+        subHtml = `Threw ${last.totalPitches} pitches on ${formatDate(last.date)}`;
+      }
+    }
+    html += `
+      <div class="eligible-item">
+        <div>
+          <div class="pname">${escapeHtml(name)}</div>
+          <div class="sub">${subHtml}</div>
+        </div>
+        ${statusHtml}
+      </div>`;
+  });
+
+  content.innerHTML = html;
 }
 
 // ---------- Expose handlers used by inline onclick attributes ----------
@@ -709,8 +836,8 @@ window.updateGameSaveEnabled = updateGameSaveEnabled;
 window.saveGameEntry = saveGameEntry;
 window.setTypeFilter = setTypeFilter;
 window.setPitcherFilter = setPitcherFilter;
+window.jumpToPitcher = jumpToPitcher;
 window.deleteSession = deleteSession;
-window.exportCSV = exportCSV;
 
 // ---------- Init ----------
 document.getElementById('dateInput').value = todayStr();

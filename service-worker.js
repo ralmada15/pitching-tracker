@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cubs-chart-v4';
+const CACHE_NAME = 'cubs-chart-v5';
 const FILES_TO_CACHE = [
   './',
   './index.html',
