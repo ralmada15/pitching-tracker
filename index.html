@@ -44,6 +44,8 @@
   header .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#AEC0EA;font-weight:600;margin-bottom:2px;}
   header h1{margin:0;font-size:20px;font-weight:800;letter-spacing:-.01em;}
   header .sync-note{font-size:10px;color:#AEC0EA;margin-top:6px;opacity:.85;}
+  header .header-row{display:flex;align-items:center;gap:12px;}
+  header .team-logo{width:46px;height:46px;object-fit:contain;flex-shrink:0;border-radius:8px;background:var(--white);padding:3px;}
 
   nav{display:flex;border-bottom:1px solid var(--line);background:var(--white);}
   nav button{flex:1;padding:13px 8px;border:none;background:none;font-size:14px;font-weight:700;color:var(--gray-mid);border-bottom:3px solid transparent;cursor:pointer;}
@@ -133,8 +135,13 @@
 <div id="app">
 
   <header>
-    <div class="eyebrow">Turlock National Little League</div>
-    <h1>Cubs Bullpen &amp; Game Charting</h1>
+    <div class="header-row">
+      <img src="team-logo.png" alt="Cubs logo" class="team-logo">
+      <div>
+        <div class="eyebrow">Turlock National Little League</div>
+        <h1>Cubs Bullpen &amp; Game Charting</h1>
+      </div>
+    </div>
     <div class="sync-note">Shared with the coaching staff — synced automatically</div>
   </header>
 
@@ -232,6 +239,7 @@
 
     <!-- HISTORY TAB -->
     <section id="history-tab">
+      <button class="util-btn" style="width:100%;margin-bottom:16px;" onclick="exportCSV()">Export CSV</button>
       <div id="historyContent">
         <div class="empty">
           <div class="big">⚾</div>
@@ -284,6 +292,7 @@ let currentMode = 'bullpen';
 let bullpenPitches = [];
 let historyTypeFilter = 'all';
 let historyPitcherFilter = 'all';
+let currentVisibleSessions = [];
 
 // ---------- Firestore data helpers ----------
 async function fetchSessions(){
@@ -604,6 +613,7 @@ async function renderHistory(){
     (historyTypeFilter==='all' || s.type===historyTypeFilter) &&
     (historyPitcherFilter==='all' || s.pitcher===historyPitcherFilter)
   );
+  currentVisibleSessions = visible;
 
   if(visible.length === 0){
     html += `<div class="empty"><p>No sessions match these filters.</p></div>`;
@@ -646,6 +656,46 @@ async function deleteSession(id){
   await renderHistory();
 }
 
+// ---------- Export ----------
+function escapeCsvField(val){
+  if(val === null || val === undefined) return '';
+  const str = String(val);
+  if(/[",\n]/.test(str)){
+    return '"' + str.replace(/"/g, '""') + '"';
+  }
+  return str;
+}
+
+function exportCSV(){
+  if(currentVisibleSessions.length === 0){
+    showToast('Nothing to export — open History and check your filters');
+    return;
+  }
+  const headers = ['Date','Type','Pitcher','Opponent','Innings Pitched','Total Pitches','Strikes','% Strikes'];
+  const rows = currentVisibleSessions.map(s => [
+    s.date,
+    s.type,
+    s.pitcher,
+    s.opponent || '',
+    s.innings || '',
+    s.totalPitches,
+    s.strikes,
+    s.pct
+  ].map(escapeCsvField).join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `cubs-pitching-log-${todayStr()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`Exported ${currentVisibleSessions.length} entries`);
+}
+
 // ---------- Expose handlers used by inline onclick attributes ----------
 window.switchTab = switchTab;
 window.switchMode = switchMode;
@@ -660,6 +710,7 @@ window.saveGameEntry = saveGameEntry;
 window.setTypeFilter = setTypeFilter;
 window.setPitcherFilter = setPitcherFilter;
 window.deleteSession = deleteSession;
+window.exportCSV = exportCSV;
 
 // ---------- Init ----------
 document.getElementById('dateInput').value = todayStr();
